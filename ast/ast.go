@@ -64,6 +64,62 @@ func (ls *LetStatement) String() string {
 	return out.String()
 }
 
+type ReturnStatement struct {
+	Token       token.Token // the token.RETURN token
+	ReturnValue Expression
+}
+
+func (rs *ReturnStatement) statementNode() {}
+func (rs *ReturnStatement) TokenLiteral() string {
+	return rs.Token.Literal
+}
+func (rs *ReturnStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(rs.TokenLiteral() + " ")
+	if rs.ReturnValue != nil {
+		out.WriteString(rs.ReturnValue.String())
+	}
+	out.WriteString(";")
+	return out.String()
+}
+
+// let x = 5;
+// x + 10;
+type ExpressionStatement struct {
+	Token      token.Token // the first token of the expression
+	Expression Expression
+}
+
+func (es *ExpressionStatement) statementNode() {}
+func (es *ExpressionStatement) TokenLiteral() string {
+	return es.Token.Literal
+}
+func (es *ExpressionStatement) String() string {
+	if es.Expression != nil {
+		return es.Expression.String()
+	}
+	return ""
+}
+
+type BlockStatement struct {
+	Token      token.Token // the '{' token. (LBRACE)
+	Statements []Statement
+}
+
+func (bs *BlockStatement) statementNode() {}
+func (bs *BlockStatement) TokenLiteral() string {
+	return bs.Token.Literal
+}
+func (bs *BlockStatement) String() string {
+	var out bytes.Buffer
+
+	for _, s := range bs.Statements {
+		out.WriteString(s.String())
+	}
+	return out.String()
+}
+
 type Identifier struct {
 	Token token.Token // the token.IDENT token
 	Value string
@@ -126,44 +182,6 @@ func (fl *FunctionLiteral) String() string {
 	out.WriteString(")")
 	out.WriteString(fl.Body.String())
 	return out.String()
-}
-
-type ReturnStatement struct {
-	Token       token.Token // the token.RETURN token
-	ReturnValue Expression
-}
-
-func (rs *ReturnStatement) statementNode() {}
-func (rs *ReturnStatement) TokenLiteral() string {
-	return rs.Token.Literal
-}
-func (rs *ReturnStatement) String() string {
-	var out bytes.Buffer
-
-	out.WriteString(rs.TokenLiteral() + " ")
-	if rs.ReturnValue != nil {
-		out.WriteString(rs.ReturnValue.String())
-	}
-	out.WriteString(";")
-	return out.String()
-}
-
-// let x = 5;
-// x + 10;
-type ExpressionStatement struct {
-	Token      token.Token // the first token of the expression
-	Expression Expression
-}
-
-func (es *ExpressionStatement) statementNode() {}
-func (es *ExpressionStatement) TokenLiteral() string {
-	return es.Token.Literal
-}
-func (es *ExpressionStatement) String() string {
-	if es.Expression != nil {
-		return es.Expression.String()
-	}
-	return ""
 }
 
 type PrefixExpression struct {
@@ -232,20 +250,26 @@ func (ie *IfExpression) String() string {
 	return out.String()
 }
 
-type BlockStatement struct {
-	Token      token.Token // the '{' token. (LBRACE)
-	Statements []Statement
+type CallExpression struct {
+	Token     token.Token // The '(' token
+	Function  Expression  // Identifier or FunctionLiteral
+	Arguments []Expression
 }
 
-func (bs *BlockStatement) statementNode() {}
-func (bs *BlockStatement) TokenLiteral() string {
-	return bs.Token.Literal
+func (ce *CallExpression) expressionNode() {}
+func (ce *CallExpression) TokenLiteral() string {
+	return ce.Token.Literal
 }
-func (bs *BlockStatement) String() string {
+func (ce *CallExpression) String() string {
 	var out bytes.Buffer
 
-	for _, s := range bs.Statements {
-		out.WriteString(s.String())
+	out.WriteString(ce.Function.String())
+	out.WriteString("(")
+	arguments := []string{}
+	for _, arg := range ce.Arguments {
+		arguments = append(arguments, arg.String())
 	}
+	out.WriteString(strings.Join(arguments, ", "))
+	out.WriteString(")")
 	return out.String()
 }
