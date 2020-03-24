@@ -15,15 +15,17 @@ func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	// Statements
 	case *ast.Program:
-		return evalStatements(node.Statements)
+		return evalProgram(node)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
 	case *ast.BlockStatement:
-		return evalStatements(node.Statements)
-	case *ast.IfExpression:
-		return evalIfExpression(node)
+		return evalBlockStatement(node)
+	case *ast.ReturnStatement:
+		return &object.ReturnValue{Value: Eval(node.ReturnValue)}
 
 	// Expressions
+	case *ast.IfExpression:
+		return evalIfExpression(node)
 	case *ast.PrefixExpression:
 		right := Eval(node.Right)
 		return evalPrefixExpression(node.Operator, right)
@@ -39,11 +41,31 @@ func Eval(node ast.Node) object.Object {
 	return nil
 }
 
-func evalStatements(stmts []ast.Statement) object.Object {
+func evalProgram(program *ast.Program) object.Object {
 	var result object.Object
 
-	for _, stmt := range stmts {
+	for _, stmt := range program.Statements {
 		result = Eval(stmt)
+
+		if returnValue, ok := result.(*object.ReturnValue); ok {
+			return returnValue.Value
+		}
+	}
+	return result
+}
+
+func evalBlockStatement(block *ast.BlockStatement) object.Object {
+	var result object.Object
+
+	for _, statement := range block.Statements {
+		result = Eval(statement)
+
+		if result != nil && result.Type() == object.RETURN_VALUE_OBJ {
+			// NOTE: without unwrapping, we let this bubble up to evalProgram, where it finally get unwrapped.
+			// (Preventing the nested expressions to be evaluated to unwrapped value, non-ReturnValue, which doesn't make the eval loop stop and return.)
+			// That last part will change when we implement the evaluation of function calls
+			return result
+		}
 	}
 	return result
 }
