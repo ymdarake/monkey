@@ -25,6 +25,8 @@ if (5 < 10) {
 }
 ==
 !=
+"foobar"
+"foo bar"
 `
 
 	tests := []struct {
@@ -98,6 +100,8 @@ if (5 < 10) {
 		{token.RBRACE, "}"},
 		{token.EQ, "=="},
 		{token.NOT_EQ, "!="},
+		{token.STRING, "foobar"},
+		{token.STRING, "foo bar"},
 		{token.EOF, ""},
 	}
 
